@@ -1,0 +1,11 @@
+<?php
+
+$databases['default']['default'] = array(
+ 'database' => '{{ getenv "DDB_DATABASE" "ddb" }}',
+ 'username' => '{{ getenv "DDB_DATABASE_USERNAME" "ddbuser" }}',
+ 'password' => '{{ getenv "DDB_DATABASE_PASSWORD" "ddbpassword" }}',
+ 'host' => '{{ getenv "DBD_DATABASE_HOST" "127.0.0.1" }}',
+ 'port' => '',
+ 'driver' => 'mysql',
+ 'prefix' => '',
+);

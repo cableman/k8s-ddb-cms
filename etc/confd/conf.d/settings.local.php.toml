@@ -1,0 +1,7 @@
+[template]
+src = "settings.local.php.tmpl"
+dest = "/app/sites/default/settings.local.php"
+mode = "0644"
+keys = [
+    "/drupal"
+]

@@ -1,0 +1,98 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: ddbcms
+  name: ddbcms-config
+data:
+  DDB_DATABASE: db 
+  DBD_DATABASE_HOST: ddbcms-database
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: ddbcms
+  name: ddbcms
+  labels:
+    tier: backend
+spec:
+  selector:
+    app: ddbcms
+    php: php72
+  ports:
+  - protocol: TCP
+    port: 9000
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: ddbcms
+  name: ddbcms
+spec:
+  selector:
+      matchLabels:
+        app: ddbcms
+  template:
+      metadata:
+        labels:
+          app: ddbcms
+          php: php72
+          tier: backend
+      spec:
+        initContainers:
+        - name: init-sites-volume
+          image: itkdev/ddb-cms
+          command: ['/bin/bash', '-c']
+          args: ['[ ! -d /data/profiles ] && cp -af /app/. /data/; ']
+          volumeMounts:
+          - mountPath: /data
+            name: vol-drupal
+          - mountPath: /data/sites/default/files
+            name: vol-files
+        containers:
+        - name: ddbcms
+          image: itkdev/ddb-cms
+          imagePullPolicy: Always
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "100m"
+            limits:
+              memory: "640Mi"
+              cpu: "500m"
+          volumeMounts:
+          - mountPath: /app
+            name: vol-drupal
+          - mountPath: /app/sites/default/files
+            name: vol-files
+          env:
+          - name: PHP_MAX_EXECUTION_TIME
+            value: '300'
+          - name: PHP_MEMORY_LIMIT
+            value: '512M'
+          - name: DDB_DATABASE_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: ddbcms
+                key: username
+          - name: DDB_DATABASE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ddbcms
+                key: password
+          envFrom:
+          - configMapRef:
+              name: ddbcms-config
+          ports:
+          - containerPort: 9000
+        volumes:
+        - name: vol-drupal
+          persistentVolumeClaim: 
+            claimName: ddbcms-pvc
+        - name: vol-files
+          persistentVolumeClaim: 
+            claimName: ddbcms-files-pvc
+
